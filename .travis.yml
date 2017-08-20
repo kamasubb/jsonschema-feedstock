@@ -4,34 +4,52 @@
 language: generic
 
 os: osx
-osx_image: beta-xcode6.1
+osx_image: xcode6.4
 
 env:
   matrix:
     
     - CONDA_PY=27
-    - CONDA_PY=34
     - CONDA_PY=35
     - CONDA_PY=36
   global:
     # The BINSTAR_TOKEN secure variable. This is defined canonically in conda-forge.yml.
-    - secure: "JfOJSQVE0kd1GWk9zBx5lyqkBHMEFjX6OjzFV1azDP4MY8apTsYzMZjr5M3pQLJMRiVXiKYpTL+lHST0r2BPO84bgispXGqxjcNxIXs9KUSzsEe/18iA+46q/ef6JoB/xrFv571EcAwd/g5C2onZGZmpWpBjsaTzHKzcy3iDMDtr5NOUf4d1JDBTPdlNLm0Axmm5zLd+X42nNgJfCcTUQ7DWtdZEV091r8rb3aYEEJovwQx2TNqik55/POtIB/5+MORts/Q8zQRM6ZzfPkxlTMSgGCOQJaXevSWN58jYmKwcxbLusZd48wlPVe+M4bfh24tIAESifOwLEuJfMtMX0SU3m7dxw9J4Rs5fTDDXoqA5lx3z82GzVN6BZKbpLODhI2mPrLx+4DxPKKX2AB/CyJkSZ9OdW9ePg1650Rstf19TjAXiSb83dXz8jQZVmUQc72gAeKQ33uI43j/xUMXKFxc8xdwPTcKJ/52doeN7PvLK6SNNgCVF7jBl81Kf3zJjrR9tZ/U5K8+laO8yaFP/qpgUCI36B7TRF3OZ70A2f9YEYKhY5XzLdjbYfiBYSTvpcXCr8I80mn3nhgCfDxbyL+pnBtKaP9E4OLoZp+gNLZxGRFAOaqBBUW89ceinO8DqwddmXAzRzvJeCLtATSziLGRr/l0/6jnYIK2opQL5vXk="
+    - secure: "W5j1M8ypIQJh/dJ2HqmY8SGJ7Hir4LjFrFyw71HfJ32rsHbocUuZMx7vZXnwL7Y4aE/PPiwmJgCI87qzdHvVYhpiD+GLKJ0Xez02enyurJ3NK4PX1m3p9+bqvn9dt2g01WGfIqcKepBacWEeZY9dKVWD5tDvT5KdMJKIsbanoSIH5580TUFUxMhVYuOGZcn4HunkzB/VQrMW7HQ9cp/N6nBZv3hoUk1xJwyTLExsRYoY6JQ/HPVWdUMeBwBXA+jGAOMKHJb9+0unHf6IHKqkLg4tmoyT9DYqRghPDoXbGkPWwdswPxmoYQk45ViFWFVODly543MVUdVZ/A6gzXTaG9TE80nfKqJqVTDYfwTSFHRKjgFEsW0d+K3a1kgV6j191dLkCWVZoFK1SgHxX3yjoaRS78Ay7cV1CTb3TQStb+I2EUral+NLyZ1b/T/J9pqH0VxUgOyPs9pD3Av0Ly1MBe6eg+xgW/+XWzwZFzwYihl7SPByunBFkggQHXHN3wpV+9lNk34MBV7mrgtONoDWxkKMB1YP1wKDJFAoxlNj5Oe4Tewyy9PoU6YOXt9xJyO2+vh6/0K+1pPHBLNHCGlKMFYJHjyZyiF3ry1uS+xgZeRJetb0mIm0uPtbmKuPEvy1mWSdXWMjiL49GtP8gP+lBkD7sohi3gKPy3l9rC09C1M="
 
 
 before_install:
+    # Fast finish the PR.
+    - |
+      (curl https://raw.githubusercontent.com/conda-forge/conda-forge-build-setup-feedstock/master/recipe/ff_ci_pr_build.py | \
+          python - -v --ci "travis" "${TRAVIS_REPO_SLUG}" "${TRAVIS_BUILD_NUMBER}" "${TRAVIS_PULL_REQUEST}") || exit 1
+
     # Remove homebrew.
-    - brew remove --force $(brew list)
-    - brew cleanup -s
-    - rm -rf $(brew --cache)
+    - |
+      echo ""
+      echo "Removing homebrew from Travis CI to avoid conflicts."
+      curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall > ~/uninstall_homebrew
+      chmod +x ~/uninstall_homebrew
+      ~/uninstall_homebrew -fq
+      rm ~/uninstall_homebrew
+
 
 install:
+    # Install Miniconda.
     - |
+      echo ""
+      echo "Installing a fresh version of Miniconda."
       MINICONDA_URL="https://repo.continuum.io/miniconda"
       MINICONDA_FILE="Miniconda3-latest-MacOSX-x86_64.sh"
       curl -L -O "${MINICONDA_URL}/${MINICONDA_FILE}"
       bash $MINICONDA_FILE -b
 
+    # Configure conda.
+    - |
+      echo ""
+      echo "Configuring conda."
       source /Users/travis/miniconda3/bin/activate root
+      conda config --remove channels defaults
+      conda config --add channels defaults
       conda config --add channels conda-forge
       conda config --set show_channel_urls true
       conda install --yes --quiet conda-forge-build-setup
