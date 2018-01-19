@@ -39,6 +39,7 @@ rm -f "$FEEDSTOCK_ROOT/build_artefacts/conda-forge-build-done"
 cat << EOF | docker run -i \
                         -v "${RECIPE_ROOT}":/recipe_root \
                         -v "${FEEDSTOCK_ROOT}":/feedstock_root \
+                        -v /tmp/qemu-ppc64le-static:/usr/bin/qemu-ppc64le-static \
                         -e HOST_USER_ID="${HOST_USER_ID}" \
                         -e CONDA_PY="${CONDA_PY}" \
                         -a stdin -a stdout -a stderr \

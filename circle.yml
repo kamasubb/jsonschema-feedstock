@@ -1,0 +1,22 @@
+checkout:
+  post:
+    - ./ci_support/checkout_merge_commit.sh
+
+machine:
+  services:
+    - docker
+
+dependencies:
+  # Note, we used to use the naive caching of docker images, but found that it was quicker
+  # just to pull each time. #rollondockercaching
+  override:
+    - docker pull condaforge/linux-anvil
+    - sudo docker run --rm --privileged multiarch/qemu-user-static:register || true
+    - wget https://github.com/multiarch/qemu-user-static/releases/download/v2.9.1/qemu-ppc64le-static.tar.gz -O /tmp/qemu-ppc64le-static.tar.gz
+    - tar zxvf /tmp/qemu-ppc64le-static.tar.gz -C /tmp
+    
+
+test:
+  override:
+    # Run, test and (if we have a BINSTAR_TOKEN) upload the distributions.
+    - ./ci_support/run_docker_build.sh
